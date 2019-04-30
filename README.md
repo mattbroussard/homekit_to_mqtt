@@ -1,0 +1,3 @@
+# homekit_to_mqtt
+
+This uses [`hap-nodejs`](https://github.com/KhaosT/HAP-NodeJS) to simulate a HomeKit device, then delegates the behavior of that device to another service communicating via MQTT. One such use case is using non-HomeKit Tuya/Teckin smart plugs with HomeKit (see my other repo [`tuya_to_mqtt`](https://github.com/mattbroussard/tuya_to_mqtt)). In the future, I'll also support colored lights and hook it up to a custom rig of addressable LEDs.
