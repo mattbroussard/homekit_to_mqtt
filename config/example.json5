@@ -1,0 +1,24 @@
+{
+  "mqtt": {
+    "clientId": "homekit_to_mqtt",
+    "brokerAddress": "mqtt://localhost",
+  },
+  "homekit": {
+    "bridgeDisplayName": "MQTT Bridge",
+    "username": "00:00:00:00:00:00",
+    "port": 51826,
+    "pincode": "123-45-678",
+  },
+  "devices": [
+    {
+      "id": "plug1",
+      "displayName": "Plug 1",
+      "type": "switch",
+      "topics": {
+        "refresh": "tuya/plug1/refresh",
+        "set_on": "tuya/plug1/set_state",
+        "on": "tuya/plug1/state"
+      }
+    },
+  ]
+}
