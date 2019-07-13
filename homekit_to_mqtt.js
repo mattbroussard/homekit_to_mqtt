@@ -85,13 +85,19 @@ async function mqttSubscribe(topic, fn) {
   });
 }
 
-async function getHomekitValue(device, key) {
-  debug('HomeKit asked for property %s of device %s', key, device.displayName);
+function refreshDevice(device) {
+  debug("Asking for refresh of device %s.", device.displayName);
 
   const refreshTopic = device.topics.refresh;
   mqttClient.publish(refreshTopic, '{}');
+}
 
-  return device.state[key];
+async function getHomekitValue(device, key) {
+  const value = device.state[key];
+  debug('HomeKit asked for property %s of device %s. Returning %s then refreshing.', key, device.displayName, value);
+
+  refreshDevice(device);
+  return value;
 }
 
 async function setValueFromHomekit(device, key, val) {
@@ -177,6 +183,9 @@ async function main() {
     }
 
     bridge.addBridgedAccessory(accessory);
+
+    // Do an initial refresh request so we have correct initial state.
+    refreshDevice(device);
 
     debug('Registered HomeKit device %s (type=%s)', device.displayName, device.type);
   });
