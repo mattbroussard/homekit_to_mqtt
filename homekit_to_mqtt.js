@@ -72,6 +72,7 @@ function onMqttMessage(topic, message) {
 }
 
 async function mqttSubscribe(topic, fn) {
+  debug("Subscribing to MQTT topic %s", topic);
   return new Promise((resolve, reject) => {
     mqttTopics[topic] = fn;
 
@@ -134,16 +135,35 @@ async function setValueFromMQTT(device, key, val) {
   }
 }
 
-async function main() {
+async function connectToMQTT() {
   debug("Connecting to MQTT...");
   mqttClient = mqtt.connect(mqttConfig.brokerAddress, {clientId: mqttConfig.clientId});
   mqttClient.on('message', onMqttMessage);
 
+  await new Promise((resolve, reject) => {
+    mqttClient.on('error', reject);
+    mqttClient.on('connect', () => resolve());
+  });
+
+  debug('Connected to MQTT.');
+}
+
+function getUuid(type, key) {
+  const namespace = homekitConfig.uuidNamespace;
+  const suffix = type + (key ? ':' + key : '');
+  const prefix = 'homekit_to_mqtt:' + (namespace ? namespace + ':' : '');
+
+  return uuid.generate(prefix + suffix);
+}
+
+async function main() {
+  await connectToMQTT();
+
   debug("Setting up Homekit devices");
-  const bridgeUuid = uuid.generate(`homekit_to_mqtt:bridge`);
+  const bridgeUuid = getUuid('bridge');
   bridge = new Bridge(homekitConfig.bridgeDisplayName, bridgeUuid);
   const mqttSubscribePromises = _.map(state, async device => {
-    const deviceUuid = uuid.generate(`homekit_to_mqtt:device:${device.id}`);
+    const deviceUuid = getUuid('device', device.id);
     const accessory = new Accessory(device.displayName, deviceUuid);
     device.accessory = accessory;
 

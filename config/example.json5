@@ -8,6 +8,7 @@
     "username": "00:00:00:00:00:00",
     "port": 51826,
     "pincode": "123-45-678",
+    "uuidNamespace": "prod",
   },
   "devices": [
     {
