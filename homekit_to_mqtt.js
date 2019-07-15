@@ -135,9 +135,20 @@ async function setValueFromMQTT(device, key, val) {
   }
 }
 
+function setupMQTTLogging() {
+  const events = ['connect', 'reconnect', 'close', 'disconnect', 'offline', 'error', 'end'];
+  events.forEach(eventName => {
+    mqttClient.on(eventName, (value) => {
+      const suffix = value ? `: ${value}` : '';
+      debug(`MQTT ${eventName} event${suffix}`);
+    });
+  });
+}
+
 async function connectToMQTT() {
   debug("Connecting to MQTT...");
   mqttClient = mqtt.connect(mqttConfig.brokerAddress, {clientId: mqttConfig.clientId});
+  setupMQTTLogging();
   mqttClient.on('message', onMqttMessage);
 
   await new Promise((resolve, reject) => {
