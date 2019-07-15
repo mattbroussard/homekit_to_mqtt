@@ -139,8 +139,7 @@ function setupMQTTLogging() {
   const events = ['connect', 'reconnect', 'close', 'disconnect', 'offline', 'error', 'end'];
   events.forEach(eventName => {
     mqttClient.on(eventName, (value) => {
-      const suffix = value ? `: ${value}` : '';
-      debug(`MQTT ${eventName} event${suffix}`);
+      debug(`MQTT ${eventName} event: `, value);
     });
   });
 }
