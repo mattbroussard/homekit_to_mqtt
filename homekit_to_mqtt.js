@@ -150,7 +150,7 @@ async function setValueFromMQTT(device, key, val) {
     case 'humidity':
       const humService = device.secondaryService || device.service;
       const humChar = humService.getCharacteristic(Characteristic.CurrentRelativeHumidity);
-      humChar.setValue(val / 100);
+      humChar.setValue(val);
       break;
   }
 }
