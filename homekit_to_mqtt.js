@@ -198,9 +198,9 @@ async function main() {
     switch (device.type) {
       case 'switch':
         // Setup HomeKit listeners
-        const service = accessory.addService(Service.Switch, device.displayName);
-        device.service = service;
-        const on = service.getCharacteristic(Characteristic.On);
+        const switchService = accessory.addService(Service.Switch, device.displayName);
+        device.service = switchService;
+        const on = switchService.getCharacteristic(Characteristic.On);
         on.on('get', async cb => {
           const val = await getHomekitValue(device, 'on');
 
@@ -228,14 +228,14 @@ async function main() {
 
       case 'temp_meter':
         // Setup HomeKit listeners
-        const service = accessory.addService(Service.TemperatureSensor, device.displayName);
-        device.service = service;
-        const temp = service.getCharacteristic(Characteristic.CurrentTemperature);
+        const tempService = accessory.addService(Service.TemperatureSensor, device.displayName);
+        device.service = tempService;
+        const temp = tempService.getCharacteristic(Characteristic.CurrentTemperature);
         temp.on('get', async cb => {
           const val = await getHomekitValue(device, 'temp');
           cb(null /* error */, val);
         });
-        const humidity = service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+        const humidity = tempService.getCharacteristic(Characteristic.CurrentRelativeHumidity);
         humidity.on('get', async cb => {
           const val = await getHomekitValue(device, 'humidity');
           cb(null /* error */, val);
