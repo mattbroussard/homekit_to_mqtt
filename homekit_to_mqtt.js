@@ -28,6 +28,8 @@ function defaultStateForDeviceType(deviceType) {
       return {on: false};
     case 'colored_light':
       return {on: false, hue: 0, saturation: 1.0, brightness: 50};
+    case 'temp_meter':
+      return {temp: 0.0, humidity: 0.0};
     default:
       throw new Error('invalid device type');
   }
@@ -36,6 +38,8 @@ function defaultStateForDeviceType(deviceType) {
 function isDeviceTypeSupported(deviceType) {
   switch (deviceType) {
     case 'switch':
+      return true;
+    case 'temp_meter':
       return true;
     default:
       return false;
@@ -87,10 +91,14 @@ async function mqttSubscribe(topic, fn) {
 }
 
 function refreshDevice(device) {
-  debug("Asking for refresh of device %s.", device.displayName);
+  if (device.topics.refresh) {
+    debug("Asking for refresh of device %s.", device.displayName);
 
-  const refreshTopic = device.topics.refresh;
-  mqttClient.publish(refreshTopic, '{}');
+    const refreshTopic = device.topics.refresh;
+    mqttClient.publish(refreshTopic, '{}');
+  } else {
+    debug("Device %s doesn't have a refresh topic.", device.displayName);
+  }
 }
 
 async function getHomekitValue(device, key) {
@@ -132,6 +140,16 @@ async function setValueFromMQTT(device, key, val) {
       characteristic.setValue(val, () => device.ignoreSets = false);
 
       break;
+
+    case 'temp':
+      const characteristic = device.service.getCharacteristic(Characteristic.CurrentTemperature);
+      characteristic.setValue(val);
+      break;
+
+    case 'humidity':
+      const characteristic = device.service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+      characteristic.setValue(val / 100);
+      break;
   }
 }
 
@@ -146,7 +164,7 @@ function setupMQTTLogging() {
 
 async function connectToMQTT() {
   debug("Connecting to MQTT...");
-  mqttClient = mqtt.connect(mqttConfig.brokerAddress, {clientId: mqttConfig.clientId});
+  mqttClient = mqtt.connect(mqttConfig.brokerAddress, {clientId: mqttConfig.clientId, keepalive: 5});
   setupMQTTLogging();
   mqttClient.on('message', onMqttMessage);
 
@@ -206,6 +224,37 @@ async function main() {
 
           await setValueFromMQTT(device, 'on', val);
         });
+        break;
+
+      case 'temp_meter':
+        // Setup HomeKit listeners
+        const service = accessory.addService(Service.TemperatureSensor, device.displayName);
+        device.service = service;
+        const temp = service.getCharacteristic(Characteristic.CurrentTemperature);
+        temp.on('get', async cb => {
+          const val = await getHomekitValue(device, 'temp');
+          cb(null /* error */, val);
+        });
+        const humidity = service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+        humidity.on('get', async cb => {
+          const val = await getHomekitValue(device, 'humidity');
+          cb(null /* error */, val);
+        });
+
+        // Setup MQTT listeners
+        await Promise.all(['temp', 'humidity'].map(name =>
+          mqttSubscribe(device.topics[name], async message => {
+            let val;
+            try {
+              val = JSON.parse(message);
+            } catch (e) {
+              debug("Received invalid %s value for device %s from MQTT, ignoring", name, device.displayName);
+              return;
+            }
+
+            await setValueFromMQTT(device, name, val);
+          })
+        ));
         break;
 
       default:
