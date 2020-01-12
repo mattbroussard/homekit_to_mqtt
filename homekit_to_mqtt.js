@@ -61,6 +61,7 @@ const state = _
     ...val,
     state: defaultStateForDeviceType(val.type),
     service: null,
+    secondaryService: null,
     accessory: null,
     ignoreSets: false,
   }))
@@ -147,7 +148,8 @@ async function setValueFromMQTT(device, key, val) {
       break;
 
     case 'humidity':
-      const humChar = device.service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+      const humService = device.secondaryService || device.service;
+      const humChar = humService.getCharacteristic(Characteristic.CurrentRelativeHumidity);
       humChar.setValue(val / 100);
       break;
   }
@@ -235,7 +237,9 @@ async function main() {
           const val = await getHomekitValue(device, 'temp');
           cb(null /* error */, val);
         });
-        const humidity = tempService.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+        const humidityService = accessory.addService(Service.HumiditySensor, device.displayName);
+        device.secondaryService = humidityService;
+        const humidity = humidityService.getCharacteristic(Characteristic.CurrentRelativeHumidity);
         humidity.on('get', async cb => {
           const val = await getHomekitValue(device, 'humidity');
           cb(null /* error */, val);
