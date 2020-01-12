@@ -131,24 +131,24 @@ async function setValueFromMQTT(device, key, val) {
 
   switch (key) {
     case 'on':
-      const characteristic = device.service.getCharacteristic(Characteristic.On);
+      const onChar = device.service.getCharacteristic(Characteristic.On);
 
       // The ignoreSets flag is to avoid an infinite loop where setting in homekit causes a homekit
       // set event, that triggers an MQTT set call, that then triggers a state event that triggers
       // setting in HomeKit.
       device.ignoreSets = true;
-      characteristic.setValue(val, () => device.ignoreSets = false);
+      onChar.setValue(val, () => device.ignoreSets = false);
 
       break;
 
     case 'temp':
-      const characteristic = device.service.getCharacteristic(Characteristic.CurrentTemperature);
-      characteristic.setValue(val);
+      const tempChar = device.service.getCharacteristic(Characteristic.CurrentTemperature);
+      tempChar.setValue(val);
       break;
 
     case 'humidity':
-      const characteristic = device.service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
-      characteristic.setValue(val / 100);
+      const humChar = device.service.getCharacteristic(Characteristic.CurrentRelativeHumidity);
+      humChar.setValue(val / 100);
       break;
   }
 }
